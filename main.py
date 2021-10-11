@@ -18,7 +18,7 @@ from zeroshot_test import zeroshot_test
 
 ## == Params ===========
 parser = argparse.ArgumentParser()
-
+parser.add_argument('--phase', type=str, default='init_learn', help='')
 parser.add_argument('--start_epoch', type=int, default=0, help='')
 parser.add_argument('--epochs', type=int, default=3, help='')
 parser.add_argument('--retrain_epochs', type=int, default=1, help='')
@@ -77,7 +77,7 @@ if torch.cuda.is_available():
     args.cuda = True
   torch.cuda.manual_seed_all(args.seed)
 device = torch.device("cuda" if args.cuda else "cpu")
-# print('Device: {}'.format(device))
+print('Device: {}'.format(device))
 
 ## == Apply seed =================
 torch.manual_seed(args.seed)
@@ -90,15 +90,16 @@ if not os.path.exists(args.save):
 ## == Model Definition ===========
 model = CNNEncoder()
 mclassifer = RelationNetwork(64, 8)
-
 model.apply(weights_init)
 mclassifer.apply(weights_init)
 
 
 if __name__ == '__main__':
-
-  # init_learn(model, mclassifer, args, device)
-  zeroshot_test(model, mclassifer, args, device)
-  # stream_learn(model, args, device)
+  if args.phase == 'init_learn':
+    init_learn(model, mclassifer, args, device)
+  elif args.phase == 'zeroshot_test':
+    zeroshot_test(model, mclassifer, args, device)
+  elif args.phase == 'stream_learn':
+    stream_learn(model, args, device)
 
 

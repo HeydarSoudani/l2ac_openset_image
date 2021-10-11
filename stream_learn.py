@@ -71,7 +71,7 @@ def stream_learn(model, args, device, known_labels=None):
 
   ## == Create ranker ============================
   ranker = Ranker(train_data, model, device, k=10)
-  detector = L2acDetector(base_labels)
+  detector = Detector(base_labels)
 
   ## == Selector =================================
   retrain_data_selector = DataSelector(
