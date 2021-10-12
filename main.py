@@ -11,7 +11,7 @@ from models.relation import RelationNetwork
 
 from init_learn import init_learn
 from zeroshot_test import zeroshot_test
-# from stream_learn import stream_learn
+from stream_learn import stream_learn
 # from utils.plot_tsne import plot_tsne
 # from utils.functions import set_novel_label, mapping_text2int
 
@@ -20,7 +20,7 @@ from zeroshot_test import zeroshot_test
 parser = argparse.ArgumentParser()
 parser.add_argument('--phase', type=str, default='init_learn', help='')
 parser.add_argument('--start_epoch', type=int, default=0, help='')
-parser.add_argument('--epochs', type=int, default=3, help='')
+parser.add_argument('--epochs', type=int, default=5, help='')
 parser.add_argument('--retrain_epochs', type=int, default=1, help='')
 parser.add_argument('--meta_iteration', type=int, default=5000, help='')
 parser.add_argument('--retrain_meta_iteration', type=int, default=1000, help='')
@@ -100,6 +100,6 @@ if __name__ == '__main__':
   elif args.phase == 'zeroshot_test':
     zeroshot_test(model, mclassifer, args, device)
   elif args.phase == 'stream_learn':
-    stream_learn(model, args, device)
+    stream_learn(model, mclassifer, args, device)
 
 

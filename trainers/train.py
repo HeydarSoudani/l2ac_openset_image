@@ -79,9 +79,9 @@ def train(model,
   # criterion = W_BCE()
   
   model_optim = Adam(model.parameters(),lr=args.lr)
-  model_scheduler = StepLR(model_optim,step_size=100000,gamma=0.5)
+  model_scheduler = StepLR(model_optim,step_size=1,gamma=0.5)
   mclassifer_optim = Adam(mclassifer.parameters(),lr=args.lr)
-  mclassifer_scheduler = StepLR(mclassifer_optim,step_size=100000,gamma=0.5)
+  mclassifer_scheduler = StepLR(mclassifer_optim,step_size=1,gamma=0.5)
 
   ## == Training ======================
   global_time = time.time()
@@ -141,10 +141,11 @@ def train(model,
           model_optim.zero_grad()
           mclassifer_optim.zero_grad()
           loss.backward()
-          # torch.nn.utils.clip_grad_norm_(model.parameters(),0.5)
-          # torch.nn.utils.clip_grad_norm_(mclassifer.parameters(),0.5)
+          
+          torch.nn.utils.clip_grad_norm_(model.parameters(),0.5)
+          torch.nn.utils.clip_grad_norm_(mclassifer.parameters(),0.5)
           model_optim.step()
-          model_optim.step()
+          mclassifer_optim.step()
 
           train_loss += loss
 

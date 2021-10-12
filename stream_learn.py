@@ -3,7 +3,6 @@ from torch.utils.data import DataLoader
 from pandas import read_csv
 import time
 
-from models.relation import RelationMLP
 from detectors.detector import Ranker, Detector
 
 from utils.data_selector import DataSelector
@@ -12,7 +11,7 @@ from augmentation import transforms
 from trainers.train import train
 
 
-def stream_learn(model, args, device, known_labels=None):
+def stream_learn(model, mclassifer, args,  device, known_labels=None):
   args.epochs = args.retrain_epochs
   args.meta_iteration = args.retrain_meta_iteration
   
@@ -33,41 +32,28 @@ def stream_learn(model, args, device, known_labels=None):
   base_labels = train_dataset.label_set
   
 
-  ## == Load model ============================
+  ## == Load Model & MetaClassifier ====================
   if args.which_model == 'best':
     try:
       model.load(args.best_model_path)
+      mclassifer.load(args.best_mclassifier_path)
     except FileNotFoundError:
       pass
     else:
       print("Load model from file {}".format(args.best_model_path))
+      print("Load meta-classifier from file {}".format(args.best_mclassifier_path))
   elif args.which_model == 'last':
     try:
       model.load(args.last_model_path)
+      mclassifer.load(args.last_mclassifier_path)
     except FileNotFoundError:
       pass
     else:
       print("Load model from file {}".format(args.last_model_path))
+      print("Load meta-classifier from file {}".format(args.last_mclassifier_path))
   model.to(device)
+  mclassifer.to(device)
 
-  ## == Load MetaClassifier ====================
-  meta_classifer = RelationMLP(feature_size=args.hidden_dims*2)
-  
-  if args.which_model == 'best':
-    try:
-      meta_classifer.load(args.best_mclassifier_path)
-    except FileNotFoundError:
-      pass
-    else:
-      print("Load model from file {}".format(args.best_mclassifier_path))
-  elif args.which_model == 'last':
-    try:
-      meta_classifer.load(args.last_mclassifier_path)
-    except FileNotFoundError:
-      pass
-    else:
-      print("Load model from file {}".format(args.last_mclassifier_path))
-  meta_classifer.to(device)
 
   ## == Create ranker ============================
   ranker = Ranker(train_data, model, device, k=10)
@@ -83,17 +69,17 @@ def stream_learn(model, args, device, known_labels=None):
   ## == Stream ===================================
   for i, data in enumerate(dataloader):
     model.eval()
-    meta_classifer.eval()
+    mclassifer.eval()
     
     sample, label = data
     sample, label = sample.to(device), label.to(device)
 
     with torch.no_grad():
-      _, feature = model.forward(sample)
+      feature = model.forward(sample)
     topk_data, topk_label = ranker.topk_selection(feature)
     xt_repeat = feature.repeat(args.ways*10, 1)  #[50, 128]
     relation_input = torch.cat((xt_repeat, topk_data), axis=1)
-    relation_output = meta_classifer(relation_input)
+    relation_output = mclassifer(relation_input)
 
     detected_novelty, predicted_label, prob = detector(relation_output, topk_label)
     real_novelty = label.item() not in detector.base_labels
