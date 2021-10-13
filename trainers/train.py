@@ -34,7 +34,7 @@ def evaluate(model, mclassifer, dataloader, criterion, args, device):
       query_features = model.forward(query_images)     #[ways*query_num, 64, 5, 5]
 
       support_features = support_features.view(args.ways, args.shot, 64, 5, 5)
-      support_features = torch.sum(support_features, 1).squeeze(1)
+      support_features = torch.mean(support_features, 1).squeeze(1)
       support_features_ext = support_features.unsqueeze(0).repeat(args.ways*args.query_num,1,1,1,1)
       support_labels = support_labels[:, 0]
       support_labels = support_labels.unsqueeze(0).repeat(args.ways*args.query_num,1).flatten()
@@ -132,10 +132,7 @@ def train(model,
             [5. if support_labels[i] == query_labels[i] else 1. for i in range(n)],
             dtype=torch.float).to(device)
          
-          # print(relation_pairs.shape)  
-          # print(relarion_labels)  
           relations = mclassifer(relation_pairs)
-          # print(relations.shape)
           loss = criterion(relations.flatten(), relarion_labels, weight=relarion_weight)
 
           model_optim.zero_grad()
@@ -148,7 +145,6 @@ def train(model,
           mclassifer_optim.step()
 
           train_loss += loss
-
 
           ## == validation ==============
           if (miteration_item + 1) % args.log_interval == 0:
