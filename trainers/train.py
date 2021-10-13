@@ -115,13 +115,13 @@ def train(model,
           support_features = support_features.view(args.ways, args.shot, 64, 5, 5)
           support_features = torch.sum(support_features, 1).squeeze(1)
           support_features_ext = support_features.unsqueeze(0).repeat(args.ways*args.query_num,1,1,1,1) 
-          support_labels = support_labels[:, 0]
-          support_labels = support_labels.unsqueeze(0).repeat(args.ways*args.query_num,1).flatten()
+          # support_labels = support_labels[:, 0]
+          # support_labels = support_labels.unsqueeze(0).repeat(args.ways*args.query_num,1).flatten()
 
           query_features_ext = query_features.unsqueeze(0).repeat(args.ways,1,1,1,1)
           query_features_ext = torch.transpose(query_features_ext,0,1)
-          query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)
-          query_labels = torch.transpose(query_labels,0,1).flatten()
+          # query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)
+          # query_labels = torch.transpose(query_labels,0,1).flatten()
 
           relation_pairs = torch.cat((support_features_ext,query_features_ext),2).view(-1,64*2,5,5)
           # n = support_labels.shape[0]
@@ -133,8 +133,8 @@ def train(model,
           #   [5. if support_labels[i] == query_labels[i] else 1. for i in range(n)],
           #   dtype=torch.float).to(device)
          
-          relations = mclassifer(relation_pairs)
-          loss = criterion(relations.flatten(), relarion_labels)
+          relations = mclassifer(relation_pairs).view(-1,args.ways)
+          loss = criterion(relations, relarion_labels)
 
           model_optim.zero_grad()
           mclassifer_optim.zero_grad()
