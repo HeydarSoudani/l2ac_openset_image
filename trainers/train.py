@@ -58,7 +58,7 @@ def evaluate(model, mclassifer, dataloader, criterion, args, device):
 
       relations = mclassifer(relation_pairs).view(-1,args.ways)
 
-      loss = criterion(relations.flatten(), relarion_labels)
+      loss = criterion(relations, relarion_labels)
       loss = loss.mean()
       total_loss += loss.item()
     
