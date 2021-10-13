@@ -45,11 +45,17 @@ def evaluate(model, mclassifer, dataloader, criterion, args, device):
       query_labels = torch.transpose(query_labels,0,1).flatten()
 
       relation_pairs = torch.cat((support_features_ext,query_features_ext),2).view(-1,64*2,5,5)
-      n = support_labels.shape[0]
-      relarion_labels = torch.tensor(
-        [1 if support_labels[i] == query_labels[i] else 0 for i in range(n)],
-        dtype=torch.float).to(device)
-                          
+      # n = support_labels.shape[0]
+      # relarion_labels = torch.tensor(
+      #   [1 if support_labels[i] == query_labels[i] else 0 for i in range(n)],
+      #   dtype=torch.float).to(device)
+      relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device)
+      relarion_labels = torch.where(
+        support_labels!=query_labels,
+        relarion_labels,
+        torch.tensor(1.).to(device)
+      )  
+
       relations = mclassifer(relation_pairs).view(-1,args.ways)
 
       loss = criterion(relations.flatten(), relarion_labels)
