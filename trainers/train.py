@@ -113,22 +113,29 @@ def train(model,
 
           # each batch sample link to every samples to calculate relations
           support_features = support_features.view(args.ways, args.shot, 64, 5, 5)
-          support_features = torch.sum(support_features, 1).squeeze(1)
+          support_features = torch.mean(support_features, 1).squeeze(1)
           support_features_ext = support_features.unsqueeze(0).repeat(args.ways*args.query_num,1,1,1,1) 
-          # support_labels = support_labels[:, 0]
-          # support_labels = support_labels.unsqueeze(0).repeat(args.ways*args.query_num,1).flatten()
+          support_labels = support_labels[:, 0]
+          support_labels = support_labels.unsqueeze(0).repeat(args.ways*args.query_num,1)
 
           query_features_ext = query_features.unsqueeze(0).repeat(args.ways,1,1,1,1)
           query_features_ext = torch.transpose(query_features_ext,0,1)
-          # query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)
-          # query_labels = torch.transpose(query_labels,0,1).flatten()
+          query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)
+          query_labels = torch.transpose(query_labels,0,1)
 
           relation_pairs = torch.cat((support_features_ext,query_features_ext),2).view(-1,64*2,5,5)
+          
           # n = support_labels.shape[0]
           # relarion_labels = torch.tensor(
           #   [1 if support_labels[i] == query_labels[i] else 0 for i in range(n)],
           #   dtype=torch.float).to(device)
-          relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device).scatter_(1, query_labels.view(-1,1), 1)
+          # # relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device).scatter_(1, query_labels.view(-1,1), 1.0)
+          relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device)
+          relarion_labels = torch.where(
+            support_labels!=query_labels,
+            relarion_labels,
+            torch.tensor(1.).to(device)
+          )  
           # relarion_weight = torch.tensor(
           #   [5. if support_labels[i] == query_labels[i] else 1. for i in range(n)],
           #   dtype=torch.float).to(device)
