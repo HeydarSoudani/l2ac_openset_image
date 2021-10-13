@@ -74,8 +74,8 @@ def train(model,
   
 
   # criterion = BCELoss()
-  # criterion = MSELoss()
-  criterion = W_MSE()
+  criterion = MSELoss()
+  # criterion = W_MSE()
   # criterion = W_BCE()
   
   model_optim = Adam(model.parameters(),lr=args.lr)
@@ -124,16 +124,17 @@ def train(model,
           query_labels = torch.transpose(query_labels,0,1).flatten()
 
           relation_pairs = torch.cat((support_features_ext,query_features_ext),2).view(-1,64*2,5,5)
-          n = support_labels.shape[0]
-          relarion_labels = torch.tensor(
-            [1 if support_labels[i] == query_labels[i] else 0 for i in range(n)],
-            dtype=torch.float).to(device)
-          relarion_weight = torch.tensor(
-            [5. if support_labels[i] == query_labels[i] else 1. for i in range(n)],
-            dtype=torch.float).to(device)
+          # n = support_labels.shape[0]
+          # relarion_labels = torch.tensor(
+          #   [1 if support_labels[i] == query_labels[i] else 0 for i in range(n)],
+          #   dtype=torch.float).to(device)
+          relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).scatter_(1, query_labels.view(-1,1), 1)
+          # relarion_weight = torch.tensor(
+          #   [5. if support_labels[i] == query_labels[i] else 1. for i in range(n)],
+          #   dtype=torch.float).to(device)
          
           relations = mclassifer(relation_pairs)
-          loss = criterion(relations.flatten(), relarion_labels, weight=relarion_weight)
+          loss = criterion(relations.flatten(), relarion_labels)
 
           model_optim.zero_grad()
           mclassifer_optim.zero_grad()
@@ -166,8 +167,8 @@ def train(model,
               min_loss = val_loss_total
               print("Saving new best model")
 
-        model_scheduler.step(miteration_item)
-        mclassifer_scheduler.step(miteration_item)
+        model_scheduler.step()
+        mclassifer_scheduler.step()
 
   except KeyboardInterrupt:
     print('skipping training') 
