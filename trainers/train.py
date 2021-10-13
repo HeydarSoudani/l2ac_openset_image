@@ -128,7 +128,7 @@ def train(model,
           # relarion_labels = torch.tensor(
           #   [1 if support_labels[i] == query_labels[i] else 0 for i in range(n)],
           #   dtype=torch.float).to(device)
-          relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).scatter_(1, query_labels.view(-1,1), 1)
+          relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).scatter_(1, query_labels.view(-1,1), 1).to(device)
           # relarion_weight = torch.tensor(
           #   [5. if support_labels[i] == query_labels[i] else 1. for i in range(n)],
           #   dtype=torch.float).to(device)
