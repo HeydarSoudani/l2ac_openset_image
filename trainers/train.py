@@ -123,6 +123,7 @@ def train(model,
           query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)
           query_labels = torch.transpose(query_labels,0,1)
 
+          # 
           relation_pairs = torch.cat((support_features_ext,query_features_ext),2).view(-1,64*2,5,5)
           
           # n = support_labels.shape[0]
@@ -162,7 +163,7 @@ def train(model,
             val_loss_total = evaluate(model, mclassifer, val_dataloader, criterion, args, device)
 
             # print losses
-            print('Time: %f, Step: %d, Train Loss: %9f, Val Loss: %9f' % (
+            print('Time: %f, Step: %d, Train Loss: %.9f, Val Loss: %.9f' % (
               time.time()-global_time, miteration_item+1, train_loss_total, val_loss_total))
             print('===============================================')
             global_time = time.time()
