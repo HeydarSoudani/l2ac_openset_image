@@ -45,17 +45,12 @@ def evaluate(model, mclassifer, dataloader, criterion, args, device):
       query_labels = torch.transpose(query_labels,0,1)
 
       relation_pairs = torch.cat((support_features_ext,query_features_ext),2).view(-1,64*2,5,5)
-      # n = support_labels.shape[0]
-      # relarion_labels = torch.tensor(
-      #   [1 if support_labels[i] == query_labels[i] else 0 for i in range(n)],
-      #   dtype=torch.float).to(device)
       relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device)
       relarion_labels = torch.where(
         support_labels!=query_labels,
         relarion_labels,
         torch.tensor(1.).to(device)
       )  
-
       relations = mclassifer(relation_pairs).view(-1,args.ways)
 
       loss = criterion(relations, relarion_labels)
@@ -65,7 +60,6 @@ def evaluate(model, mclassifer, dataloader, criterion, args, device):
     total_loss /= len(dataloader)
     return total_loss  
     
-
 
 def train(model,
           mclassifer,
@@ -136,17 +130,17 @@ def train(model,
           #   [1 if support_labels[i] == query_labels[i] else 0 for i in range(n)],
           #   dtype=torch.float).to(device)
           # # relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device).scatter_(1, query_labels.view(-1,1), 1.0)
+           # relarion_weight = torch.tensor(
+          #   [5. if support_labels[i] == query_labels[i] else 1. for i in range(n)],
+          #   dtype=torch.float).to(device)
           relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device)
           relarion_labels = torch.where(
             support_labels!=query_labels,
             relarion_labels,
             torch.tensor(1.).to(device)
           )  
-          # relarion_weight = torch.tensor(
-          #   [5. if support_labels[i] == query_labels[i] else 1. for i in range(n)],
-          #   dtype=torch.float).to(device)
-         
           relations = mclassifer(relation_pairs).view(-1,args.ways)
+          
           loss = criterion(relations, relarion_labels)
 
           model_optim.zero_grad()
@@ -168,7 +162,7 @@ def train(model,
             val_loss_total = evaluate(model, mclassifer, val_dataloader, criterion, args, device)
 
             # print losses
-            print('Time: %f, Step: %d, Train Loss: %f, Val Loss: %f' % (
+            print('Time: %f, Step: %d, Train Loss: %9f, Val Loss: %9f' % (
               time.time()-global_time, miteration_item+1, train_loss_total, val_loss_total))
             print('===============================================')
             global_time = time.time()
