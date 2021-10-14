@@ -44,7 +44,13 @@ def evaluate(model, mclassifer, dataloader, criterion, args, device):
       query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)
       query_labels = torch.transpose(query_labels,0,1)
 
-      relation_pairs = torch.cat((support_features_ext,query_features_ext),2).view(-1,64*2,5,5)
+      # sum, sub, cat
+      sum_feature = support_features_ext+query_features_ext
+      sub_abs_feature = torch.abs(support_features_ext-query_features_ext)
+      relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,64*2,5,5)
+      # cat
+      # relation_pairs = torch.cat((support_features_ext,query_features_ext),2).view(-1,64*2,5,5)
+      
       relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device)
       relarion_labels = torch.where(
         support_labels!=query_labels,
@@ -123,8 +129,16 @@ def train(model,
           query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)
           query_labels = torch.transpose(query_labels,0,1)
 
-          # 
-          relation_pairs = torch.cat((support_features_ext,query_features_ext),2).view(-1,64*2,5,5)
+          # abssub() cat sum() 
+          sum_feature = support_features_ext+query_features_ext
+          sub_abs_feature = torch.abs(support_features_ext-query_features_ext)
+          relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,64*2,5,5)
+          # print('sum: {}'.format(sum_feature.shape))
+          # print('sub: {}'.format(sub_abs_feature.shape))
+          # time.sleep(5)
+
+          # cat
+          # relation_pairs = torch.cat((support_features_ext, query_features_ext), 2).view(-1,64*2,5,5)
           
           # n = support_labels.shape[0]
           # relarion_labels = torch.tensor(
