@@ -87,12 +87,12 @@ def evaluate(model, mclassifer, dataloader, criterion, args, device):
       relarion_weights = torch.where(
         support_labels!=query_labels,
         relarion_weights,
-        torch.tensor(5.).to(device)
+        torch.tensor(0.83).to(device)
       )
       relarion_weights = torch.where(
         support_labels==query_labels,
         relarion_weights,
-        torch.tensor(1.).to(device)
+        torch.tensor(0.17).to(device)
       ).view(-1,1)
 
 
@@ -216,32 +216,38 @@ def train(model,
           relarion_labels = torch.where(
             support_labels!=query_labels,
             relarion_labels,
-            torch.tensor(1.).to(device)
+            torch.tensor(1.0).to(device)
           ).view(-1,1)
 
           relarion_weights = torch.zeros(args.ways*args.query_num, args.ways).to(device)
           relarion_weights = torch.where(
             support_labels!=query_labels,
             relarion_weights,
-            torch.tensor(5.).to(device)
+            torch.tensor(0.83).to(device)
           )
           relarion_weights = torch.where(
             support_labels==query_labels,
             relarion_weights,
-            torch.tensor(1.).to(device)
+            torch.tensor(0.17).to(device)
           ).view(-1,1)
+
+          # print(relarion_weights.view(-1,args.ways))
 
           ## =================
           ## == relation Net. ==========================
           relations = mclassifer(relation_pairs)
+          # print(torch.log(relations.view(-1,args.ways)))
+          # print(torch.log(1 - relations.view(-1,args.ways)))
+          # print(relarion_labels.view(-1,args.ways))
+          # time.sleep(3)
           # loss = criterion(relations, relarion_labels)
           loss = criterion(relations, relarion_labels, weight=relarion_weights)
           model_optim.zero_grad()
           mclassifer_optim.zero_grad()
           loss.backward()
           
-          torch.nn.utils.clip_grad_norm_(model.parameters(),0.5)
-          torch.nn.utils.clip_grad_norm_(mclassifer.parameters(),0.5)
+          # torch.nn.utils.clip_grad_norm_(model.parameters(),0.5)
+          # torch.nn.utils.clip_grad_norm_(mclassifer.parameters(),0.5)
           model_optim.step()
           mclassifer_optim.step()
 
