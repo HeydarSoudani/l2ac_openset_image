@@ -83,10 +83,23 @@ def evaluate(model, mclassifer, dataloader, criterion, args, device):
         torch.tensor(1.).to(device)
       ).view(-1,1)
 
+      relarion_weights = torch.zeros(args.ways*args.query_num, args.ways).to(device)
+      relarion_weights = torch.where(
+        support_labels!=query_labels,
+        relarion_weights,
+        torch.tensor(5.).to(device)
+      )
+      relarion_weights = torch.where(
+        support_labels==query_labels,
+        relarion_weights,
+        torch.tensor(1.).to(device)
+      ).view(-1,1)
+
 
       ## == relation Net. ==========================
       relations = mclassifer(relation_pairs)
-      loss = criterion(relations, relarion_labels)
+      # loss = criterion(relations, relarion_labels)
+      loss = criterion(relations, relarion_labels, weight=relarion_weights)
       loss = loss.mean()
       total_loss += loss.item()
     
@@ -107,8 +120,8 @@ def train(model,
   
 
   # criterion = BCELoss()
-  criterion = MSELoss()
-  # criterion = W_MSE()
+  # criterion = MSELoss()
+  criterion = W_MSE()
   # criterion = W_BCE()
   
   model_optim = Adam(model.parameters(),lr=args.lr)
@@ -206,11 +219,23 @@ def train(model,
             torch.tensor(1.).to(device)
           ).view(-1,1)
 
+          relarion_weights = torch.zeros(args.ways*args.query_num, args.ways).to(device)
+          relarion_weights = torch.where(
+            support_labels!=query_labels,
+            relarion_weights,
+            torch.tensor(5.).to(device)
+          )
+          relarion_weights = torch.where(
+            support_labels==query_labels,
+            relarion_weights,
+            torch.tensor(1.).to(device)
+          ).view(-1,1)
 
           ## =================
           ## == relation Net. ==========================
           relations = mclassifer(relation_pairs)
-          loss = criterion(relations, relarion_labels)
+          # loss = criterion(relations, relarion_labels)
+          loss = criterion(relations, relarion_labels, weight=relarion_weights)
           model_optim.zero_grad()
           mclassifer_optim.zero_grad()
           loss.backward()
