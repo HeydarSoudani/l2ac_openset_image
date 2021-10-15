@@ -80,7 +80,7 @@ def zeroshot_test(model, mclassifer, args, device, known_labels=None):
       # sum, sub, cat
       sum_feature = xt_repeat+topk_data
       sub_abs_feature = torch.abs(xt_repeat-topk_data)
-      relation_input = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,128*2) #[w*w*q, 256]
+      relation_input = torch.cat((sum_feature, sub_abs_feature), 1).view(-1,128*2) #[w*w*q, 256]
       
       relation_output = mclassifer(relation_input)
 

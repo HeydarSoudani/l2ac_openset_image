@@ -18,7 +18,7 @@ from stream_learn import stream_learn
 
 ## == Params ===========
 parser = argparse.ArgumentParser()
-parser.add_argument('--phase', type=str, default='init_learn', help='')
+parser.add_argument('--phase', type=str, default='zeroshot_test', help='')
 parser.add_argument('--start_epoch', type=int, default=0, help='')
 parser.add_argument('--epochs', type=int, default=5, help='')
 parser.add_argument('--retrain_epochs', type=int, default=1, help='')
