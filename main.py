@@ -7,7 +7,7 @@ from pandas import read_csv
 
 # CNNEncoder, DenseNet,
 from models.cnn import CNNEncoder, weights_init
-from models.relation import RelationNetwork
+from models.relation import RelationNetwork, RelationNetworkFC
 
 from init_learn import init_learn
 from zeroshot_test import zeroshot_test
@@ -28,7 +28,7 @@ parser.add_argument('--log_interval', type=int, default=200, help='must be less 
 parser.add_argument('--batch_size', type=int, default=64, help='')
 parser.add_argument('--ways', type=int, default=5, help='')
 parser.add_argument('--query_ways', type=int, default=5, help='')
-parser.add_argument('--shot', type=int, default=5, help='')
+parser.add_argument('--shot', type=int, default=1, help='')
 parser.add_argument('--query_num', type=int, default=5, help='')
 parser.add_argument('--buffer_size', type=int, default=1000, help='')
 parser.add_argument('--update_step', type=int, default=5, help='for Reptile algorithm')
@@ -89,7 +89,8 @@ if not os.path.exists(args.save):
 
 ## == Model Definition ===========
 model = CNNEncoder(args)
-mclassifer = RelationNetwork(64, 8)
+# mclassifer = RelationNetwork(64, 8)
+mclassifer = RelationNetworkFC(args)
 model.apply(weights_init)
 mclassifer.apply(weights_init)
 

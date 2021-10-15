@@ -44,12 +44,18 @@ class CNNEncoder(nn.Module):
 										nn.ReLU(),
 										nn.Dropout(args.dropout))
 
+		self.fc1 = nn.Linear(in_features=64*5*5, out_features=args.hidden_dims)
+
 	def forward(self,x): #[bs, 1, 28, 28]
 		out = self.layer1(x)   #[bs, 64, 13, 13]
 		out = self.layer2(out) #[bs, 64, 5, 5]
 		out = self.layer3(out) #[bs, 64, 5, 5]
 		out = self.layer4(out) #[bs, 64, 5, 5]
-		#out = out.view(out.size(0),-1)
+		
+		# for 1-dim feature vector
+		out = out.view(out.size(0),-1)
+		out = self.fc1(out)
+		
 		return out # 64
 
 	def to(self, *args, **kwargs):
@@ -59,7 +65,7 @@ class CNNEncoder(nn.Module):
 		self.layer2 = self.layer2.to(*args, **kwargs)
 		self.layer3 = self.layer3.to(*args, **kwargs)
 		self.layer4 = self.layer4.to(*args, **kwargs)
-
+		self.fc1 = self.fc1.to(*args, **kwargs)
 		return self
 	
 	def save(self, path):

@@ -29,36 +29,63 @@ def evaluate(model, mclassifer, dataloader, criterion, args, device):
       query_images = query_images.to(device)
       query_labels = query_labels.to(device)
       
-      
+
       support_features = model.forward(support_images) #[ways*shot, 64, 5, 5]
       query_features = model.forward(query_images)     #[ways*query_num, 64, 5, 5]
 
-      support_features = support_features.view(args.ways, args.shot, 64, 5, 5)
-      support_features = torch.mean(support_features, 1).squeeze(1)
-      support_features_ext = support_features.unsqueeze(0).repeat(args.ways*args.query_num,1,1,1,1)
-      support_labels = support_labels[:, 0]
-      support_labels = support_labels.unsqueeze(0).repeat(args.ways*args.query_num,1)
+      ### === For 3-dim feature vector ============
+      # support_features = support_features.view(args.ways, args.shot, 64, 5, 5)
+      # support_features = torch.mean(support_features, 1).squeeze(1)
+      # support_features_ext = support_features.unsqueeze(0).repeat(args.ways*args.query_num,1,1,1,1)
+      # support_labels = support_labels[:, 0]
+      # support_labels = support_labels.unsqueeze(0).repeat(args.ways*args.query_num,1)
 
-      query_features_ext = query_features.unsqueeze(0).repeat(args.ways,1,1,1,1)
-      query_features_ext = torch.transpose(query_features_ext,0,1)
-      query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)
-      query_labels = torch.transpose(query_labels,0,1)
+      # query_features_ext = query_features.unsqueeze(0).repeat(args.ways,1,1,1,1)
+      # query_features_ext = torch.transpose(query_features_ext,0,1)
+      # query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)
+      # query_labels = torch.transpose(query_labels,0,1)
 
-      # sum, sub, cat
+      # # sum, sub, cat
+      # sum_feature = support_features_ext+query_features_ext
+      # sub_abs_feature = torch.abs(support_features_ext-query_features_ext)
+      # relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,64*2,5,5)
+      # # cat
+      # # relation_pairs = torch.cat((support_features_ext,query_features_ext),2).view(-1,64*2,5,5)
+      
+      # relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device)
+      # relarion_labels = torch.where(
+      #   support_labels!=query_labels,
+      #   relarion_labels,
+      #   torch.tensor(1.).to(device)
+      # )
+
+      ### === For 1-dim feature vector =============
+      support_features = support_features.view(args.ways, args.shot, 128)
+      support_features = torch.mean(support_features, 1).squeeze(1)  # [ways, 128]
+      support_features_ext = support_features.unsqueeze(0).repeat(args.ways*args.query_num,1,1) #[w*q, w, 128]
+      support_labels = support_labels[:, 0]                                           #[w]
+      support_labels = support_labels.unsqueeze(0).repeat(args.ways*args.query_num,1) #[w*q, w]
+
+      query_features_ext = query_features.unsqueeze(0).repeat(args.ways,1,1)  #[w, w*q, 128]
+      query_features_ext = torch.transpose(query_features_ext,0,1)                #[w*q, w, 128]
+      query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)                #[w, w*q]
+      query_labels = torch.transpose(query_labels,0,1)                            #[w*q, w]
+
+      # abssub() cat sum() 
       sum_feature = support_features_ext+query_features_ext
       sub_abs_feature = torch.abs(support_features_ext-query_features_ext)
-      relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,64*2,5,5)
-      # cat
-      # relation_pairs = torch.cat((support_features_ext,query_features_ext),2).view(-1,64*2,5,5)
-      
+      relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,128*2) #[w*w*q, 256]
+
       relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device)
       relarion_labels = torch.where(
         support_labels!=query_labels,
         relarion_labels,
         torch.tensor(1.).to(device)
-      )  
-      relations = mclassifer(relation_pairs).view(-1,args.ways)
+      ).view(-1,1)
 
+
+      ## == relation Net. ==========================
+      relations = mclassifer(relation_pairs)
       loss = criterion(relations, relarion_labels)
       loss = loss.mean()
       total_loss += loss.item()
@@ -113,51 +140,77 @@ def train(model,
           query_images = query_images.to(device)
           query_labels = query_labels.to(device)
 
-
           support_features = model.forward(support_images) #[ways*shot, 64, 5, 5]
           query_features = model.forward(query_images)     #[ways*query_num, 64, 5, 5]
 
-          # each batch sample link to every samples to calculate relations
-          support_features = support_features.view(args.ways, args.shot, 64, 5, 5)
-          support_features = torch.mean(support_features, 1).squeeze(1)
-          support_features_ext = support_features.unsqueeze(0).repeat(args.ways*args.query_num,1,1,1,1) 
-          support_labels = support_labels[:, 0]
-          support_labels = support_labels.unsqueeze(0).repeat(args.ways*args.query_num,1)
 
-          query_features_ext = query_features.unsqueeze(0).repeat(args.ways,1,1,1,1)
-          query_features_ext = torch.transpose(query_features_ext,0,1)
-          query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)
-          query_labels = torch.transpose(query_labels,0,1)
+          ### === For 3-dim feature vector ===========================
+          # # each batch sample link to every samples to calculate relations
+          # support_features = support_features.view(args.ways, args.shot, 64, 5, 5)
+          # support_features = torch.mean(support_features, 1).squeeze(1)
+          # support_features_ext = support_features.unsqueeze(0).repeat(args.ways*args.query_num,1,1,1,1) 
+          # support_labels = support_labels[:, 0]
+          # support_labels = support_labels.unsqueeze(0).repeat(args.ways*args.query_num,1)
+
+          # query_features_ext = query_features.unsqueeze(0).repeat(args.ways,1,1,1,1)
+          # query_features_ext = torch.transpose(query_features_ext,0,1)
+          # query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)
+          # query_labels = torch.transpose(query_labels,0,1)
+
+          # # abssub() cat sum() 
+          # sum_feature = support_features_ext+query_features_ext
+          # sub_abs_feature = torch.abs(support_features_ext-query_features_ext)
+          # relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,64*2,5,5)
+          # # cat
+          # # relation_pairs = torch.cat((support_features_ext, query_features_ext), 2).view(-1,64*2,5,5)
+          
+          # # n = support_labels.shape[0]
+          # # relarion_labels = torch.tensor(
+          # #   [1 if support_labels[i] == query_labels[i] else 0 for i in range(n)],
+          # #   dtype=torch.float).to(device)
+          # # # relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device).scatter_(1, query_labels.view(-1,1), 1.0)
+          #  # relarion_weight = torch.tensor(
+          # #   [5. if support_labels[i] == query_labels[i] else 1. for i in range(n)],
+          # #   dtype=torch.float).to(device)
+          # relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device)
+          # relarion_labels = torch.where(
+          #   support_labels!=query_labels,
+          #   relarion_labels,
+          #   torch.tensor(1.).to(device)
+          # )  
+
+          ### === For 1-dim feature vector =============
+          support_features = support_features.view(args.ways, args.shot, 128)
+          support_features = torch.mean(support_features, 1).squeeze(1)  # [ways, 128]
+          # print(support_features.shape)
+          support_features_ext = support_features.unsqueeze(0).repeat(args.ways*args.query_num,1,1) #[w*q, w, 128]
+          # print(support_features_ext.shape)
+          support_labels = support_labels[:, 0]                                           #[w]
+          support_labels = support_labels.unsqueeze(0).repeat(args.ways*args.query_num,1) #[w*q, w]
+
+          query_features_ext = query_features.unsqueeze(0).repeat(args.ways,1,1)  #[w, w*q, 128]
+          query_features_ext = torch.transpose(query_features_ext,0,1)                #[w*q, w, 128]
+          # print(query_features_ext.shape)
+          query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)                #[w, w*q]
+          query_labels = torch.transpose(query_labels,0,1)                            #[w*q, w]
 
           # abssub() cat sum() 
           sum_feature = support_features_ext+query_features_ext
           sub_abs_feature = torch.abs(support_features_ext-query_features_ext)
-          relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,64*2,5,5)
-          # print('sum: {}'.format(sum_feature.shape))
-          # print('sub: {}'.format(sub_abs_feature.shape))
-          # time.sleep(5)
+          relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,128*2) #[w*w*q, 256]
 
-          # cat
-          # relation_pairs = torch.cat((support_features_ext, query_features_ext), 2).view(-1,64*2,5,5)
-          
-          # n = support_labels.shape[0]
-          # relarion_labels = torch.tensor(
-          #   [1 if support_labels[i] == query_labels[i] else 0 for i in range(n)],
-          #   dtype=torch.float).to(device)
-          # # relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device).scatter_(1, query_labels.view(-1,1), 1.0)
-           # relarion_weight = torch.tensor(
-          #   [5. if support_labels[i] == query_labels[i] else 1. for i in range(n)],
-          #   dtype=torch.float).to(device)
           relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device)
           relarion_labels = torch.where(
             support_labels!=query_labels,
             relarion_labels,
             torch.tensor(1.).to(device)
-          )  
-          relations = mclassifer(relation_pairs).view(-1,args.ways)
-          
-          loss = criterion(relations, relarion_labels)
+          ).view(-1,1)
 
+
+          ## =================
+          ## == relation Net. ==========================
+          relations = mclassifer(relation_pairs)
+          loss = criterion(relations, relarion_labels)
           model_optim.zero_grad()
           mclassifer_optim.zero_grad()
           loss.backward()

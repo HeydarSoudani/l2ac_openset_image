@@ -61,19 +61,28 @@ def zeroshot_test(model, mclassifer, args, device, known_labels=None):
     for i, data in enumerate(dataloader):
       sample, label = data
       sample, label = sample.to(device), label.to(device)
-      
       feature = model.forward(sample)
+      
       topk_data, topk_label = ranker.topk_selection(feature)
-      xt_repeat = feature.repeat(args.ways*k, 1, 1, 1)  #[50, 64, 5, 5]
+      
 
-      # cat
-      # relation_input = torch.cat((xt_repeat, topk_data), axis=1)
+      ### === For 3-dim feature vector ===========================
+      # xt_repeat = feature.repeat(args.ways*k, 1, 1, 1)  #[50, 64, 5, 5]
+      # # sum, sub, cat
+      # sum_feature = xt_repeat+topk_data
+      # sub_abs_feature = torch.abs(xt_repeat-topk_data)
+      # relation_input = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,64*2,5,5)
+      # # cat
+      # # relation_input = torch.cat((xt_repeat, topk_data), axis=1)
+      
+      ### === For 1-dim feature vector ===========================
+      xt_repeat = feature.repeat(args.ways*k, 1)  #[50, 128]
       # sum, sub, cat
       sum_feature = xt_repeat+topk_data
       sub_abs_feature = torch.abs(xt_repeat-topk_data)
-      relation_input = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,64*2,5,5)
-
-      relation_output = mclassifer(relation_input).flatten()
+      relation_input = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,128*2) #[w*w*q, 256]
+      
+      relation_output = mclassifer(relation_input)
 
       detected_novelty, predicted_label, prob = detector(relation_output, topk_label)
       real_novelty = label.item() not in detector.base_labels
