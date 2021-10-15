@@ -66,7 +66,13 @@ def zeroshot_test(model, mclassifer, args, device, known_labels=None):
       topk_data, topk_label = ranker.topk_selection(feature)
       xt_repeat = feature.repeat(args.ways*k, 1, 1, 1)  #[50, 64, 5, 5]
 
-      relation_input = torch.cat((xt_repeat, topk_data), axis=1)
+      # cat
+      # relation_input = torch.cat((xt_repeat, topk_data), axis=1)
+      # sum, sub, cat
+      sum_feature = xt_repeat+topk_data
+      sub_abs_feature = torch.abs(xt_repeat-topk_data)
+      relation_input = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,64*2,5,5)
+
       relation_output = mclassifer(relation_input).flatten()
 
       detected_novelty, predicted_label, prob = detector(relation_output, topk_label)

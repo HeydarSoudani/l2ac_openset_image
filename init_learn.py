@@ -6,9 +6,7 @@ from trainers.train import train
 
 
 def init_learn(model, mclassifer, args, device):
-
   
-
   ## == load train data from file ===
   train_data = read_csv(args.train_path, sep=',', header=None).values
 

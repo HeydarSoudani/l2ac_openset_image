@@ -19,26 +19,30 @@ def weights_init(m):
 
 class CNNEncoder(nn.Module):
 	"""docstring for ClassName"""
-	def __init__(self):
+	def __init__(self, args):
 		super(CNNEncoder, self).__init__()
 		self.layer1 = nn.Sequential(
 										nn.Conv2d(1,64,kernel_size=3,padding=0),
 										nn.BatchNorm2d(64, momentum=1, affine=True),
 										nn.ReLU(),
-										nn.MaxPool2d(2))
+										nn.MaxPool2d(2),
+										nn.Dropout(args.dropout))
 		self.layer2 = nn.Sequential(
 										nn.Conv2d(64,64,kernel_size=3,padding=0),
 										nn.BatchNorm2d(64, momentum=1, affine=True),
 										nn.ReLU(),
-										nn.MaxPool2d(2))
+										nn.MaxPool2d(2),
+										nn.Dropout(args.dropout))
 		self.layer3 = nn.Sequential(
 										nn.Conv2d(64,64,kernel_size=3,padding=1),
 										nn.BatchNorm2d(64, momentum=1, affine=True),
-										nn.ReLU())
+										nn.ReLU(),
+										nn.Dropout(args.dropout))
 		self.layer4 = nn.Sequential(
 										nn.Conv2d(64,64,kernel_size=3,padding=1),
 										nn.BatchNorm2d(64, momentum=1, affine=True),
-										nn.ReLU())
+										nn.ReLU(),
+										nn.Dropout(args.dropout))
 
 	def forward(self,x): #[bs, 1, 28, 28]
 		out = self.layer1(x)   #[bs, 64, 13, 13]

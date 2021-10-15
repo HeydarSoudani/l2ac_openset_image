@@ -42,7 +42,7 @@ parser.add_argument('--grad_clip', type=float, default=5.0)
 parser.add_argument('--std_coefficient', type=float, default=1.0, help='for Prototype algorithm')
 
 parser.add_argument('--which_model', type=str, default='best', help='')
-parser.add_argument('--dropout', type=float, default=0.2, help='')
+parser.add_argument('--dropout', type=float, default=0.4, help='')
 parser.add_argument('--hidden_dims', type=int, default=128, help='') #768
 parser.add_argument('--seen_labels', type=int, default=5, help='')
 
@@ -88,7 +88,7 @@ if not os.path.exists(args.save):
   os.makedirs(args.save)
 
 ## == Model Definition ===========
-model = CNNEncoder()
+model = CNNEncoder(args)
 mclassifer = RelationNetwork(64, 8)
 model.apply(weights_init)
 mclassifer.apply(weights_init)
