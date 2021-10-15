@@ -121,8 +121,10 @@ def train(model,
 
   # criterion = BCELoss()
   # criterion = MSELoss()
-  # criterion = W_MSE()
-  criterion = W_BCE()
+  if args.loss_func == 'mse':
+    criterion = W_MSE()
+  elif args.loss_func == 'bce':
+    criterion = W_BCE()
   
   model_optim = Adam(model.parameters(),lr=args.lr)
   model_scheduler = StepLR(model_optim,step_size=1,gamma=0.5)
