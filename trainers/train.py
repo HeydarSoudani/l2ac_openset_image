@@ -109,7 +109,6 @@ def evaluate(model, mclassifer, dataloader, criterion, args, device):
     total_loss /= len(dataloader)
     return total_loss  
     
-
 def train(model,
           mclassifer,
           train_data,
@@ -121,7 +120,6 @@ def train(model,
   ## == Prepar dataloader =============
   train_dataloaders, val_dataloader=  dataloader_preparation(train_data, args)
   
-
   # criterion = BCELoss()
   # criterion = MSELoss()
   if args.loss_func == 'mse':

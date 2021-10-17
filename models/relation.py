@@ -54,9 +54,11 @@ class RelationNetworkFC(nn.Module):
     
     self.fc1 = nn.Linear(2*args.hidden_dims,64)
     self.fc2 = nn.Linear(64,1)
+    self.drop = nn.Dropout(args.dropout)
 
   def forward(self,x):
     out = torch.relu(self.fc1(x))
+    out = self.drop(out)
     out = torch.sigmoid(self.fc2(out))
     return out
 
@@ -77,21 +79,12 @@ class RelationNetworkFC(nn.Module):
 
 
 
-
-
-
-
-
-
-
-
-
-
 class RelationMLP(nn.Module):
   
   def __init__(self, feature_size):
     super(RelationMLP, self).__init__()
     self.fc1 = nn.Linear(feature_size, 64)
+    self.drop = nn.Dropout(args.dropout)
     self.fc2 = nn.Linear(64, 1)
   
   def forward(self, x):
