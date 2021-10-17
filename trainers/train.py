@@ -71,10 +71,13 @@ def evaluate(model, mclassifer, dataloader, criterion, args, device):
       query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)                #[w, w*q]
       query_labels = torch.transpose(query_labels,0,1)                            #[w*q, w]
 
+      # cat
+      relation_pairs = torch.cat((support_features_ext, query_features_ext), 2).view(-1,128*2)
+
       # abssub() cat sum() 
-      sum_feature = support_features_ext+query_features_ext
-      sub_abs_feature = torch.abs(support_features_ext-query_features_ext)
-      relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,128*2) #[w*w*q, 256]
+      # sum_feature = support_features_ext+query_features_ext
+      # sub_abs_feature = torch.abs(support_features_ext-query_features_ext)
+      # relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,128*2) #[w*w*q, 256]
 
       relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device)
       relarion_labels = torch.where(
@@ -209,10 +212,13 @@ def train(model,
           query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)                #[w, w*q]
           query_labels = torch.transpose(query_labels,0,1)                            #[w*q, w]
 
-          # abssub() cat sum() 
-          sum_feature = support_features_ext+query_features_ext
-          sub_abs_feature = torch.abs(support_features_ext-query_features_ext)
-          relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,128*2) #[w*w*q, 256]
+          # cat
+          relation_pairs = torch.cat((support_features_ext, query_features_ext), 2).view(-1,128*2) #[w*w*q, 256]
+
+          # abssub() cat sum()
+          # sum_feature = support_features_ext+query_features_ext
+          # sub_abs_feature = torch.abs(support_features_ext-query_features_ext)
+          # relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,128*2) #[w*w*q, 256]
 
           relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device)
           relarion_labels = torch.where(

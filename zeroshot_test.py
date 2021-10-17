@@ -77,10 +77,14 @@ def zeroshot_test(model, mclassifer, args, device, known_labels=None):
       
       ### === For 1-dim feature vector ===========================
       xt_repeat = feature.repeat(args.ways*k, 1)  #[50, 128]
+      
+      # cat
+      relation_input = torch.cat((xt_repeat, topk_data), 1).view(-1,128*2) #[w*w*q, 256]
+      
       # sum, sub, cat
-      sum_feature = xt_repeat+topk_data
-      sub_abs_feature = torch.abs(xt_repeat-topk_data)
-      relation_input = torch.cat((sum_feature, sub_abs_feature), 1).view(-1,128*2) #[w*w*q, 256]
+      # sum_feature = xt_repeat+topk_data
+      # sub_abs_feature = torch.abs(xt_repeat-topk_data)
+      # relation_input = torch.cat((sum_feature, sub_abs_feature), 1).view(-1,128*2) #[w*w*q, 256]
       
       relation_output = mclassifer(relation_input)
 
