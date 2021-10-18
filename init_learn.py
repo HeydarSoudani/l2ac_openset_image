@@ -1,7 +1,5 @@
 import time
 from pandas import read_csv
-
-from datasets.dataset import DatasetFM
 from trainers.train import train
 
 
