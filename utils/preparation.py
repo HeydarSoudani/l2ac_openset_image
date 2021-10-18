@@ -89,7 +89,6 @@ def dataloader_preparation(train_data, args):
   return train_dataloaders, val_dataloader
 
 
-
 def relation_data_preparation(batch, model, args, device):
   # == Data preparation ===========
   support_images, support_labels, query_images, query_labels = batch
@@ -126,7 +125,6 @@ def relation_data_preparation(batch, model, args, device):
     elif args.rel_input_oprations == 'cat':
       relation_pairs = torch.cat((support_features_ext, query_features_ext), 2).view(-1,128*2)
 
-
   ### === For 3-dim feature vector ============
   if args.relation_dim == 3:
     support_features = support_features.view(args.ways, args.shot, 64, 5, 5)
@@ -146,7 +144,6 @@ def relation_data_preparation(batch, model, args, device):
       relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,64*2,5,5)
     elif args.rel_input_oprations == 'cat':
       relation_pairs = torch.cat((support_features_ext,query_features_ext),2).view(-1,64*2,5,5)
-
 
   relarion_labels = torch.zeros(
     args.ways*args.query_num,

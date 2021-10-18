@@ -17,8 +17,11 @@ def zeroshot_test(model, mclassifer, args, device, known_labels=None):
     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
   ])
   stream_data = read_csv(args.test_path, sep=',', header=None).values
-  stream_dataset = DatasetFM(stream_data)
-  # stream_dataset = DatasetFM(stream_data, transforms=transform)
+
+  if args.use_transform == False:
+    stream_dataset = DatasetFM(stream_data)
+  else:
+    stream_dataset = DatasetFM(stream_data, transforms=transform)
   dataloader = DataLoader(dataset=stream_dataset, batch_size=1, shuffle=False)
 
   train_data = read_csv(args.train_path, sep=',', header=None).values
@@ -65,26 +68,28 @@ def zeroshot_test(model, mclassifer, args, device, known_labels=None):
       
       topk_data, topk_label = ranker.topk_selection(feature)
       
-
-      ### === For 3-dim feature vector ===========================
-      # xt_repeat = feature.repeat(args.ways*k, 1, 1, 1)  #[50, 64, 5, 5]
-      # # sum, sub, cat
-      # sum_feature = xt_repeat+topk_data
-      # sub_abs_feature = torch.abs(xt_repeat-topk_data)
-      # relation_input = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,64*2,5,5)
-      # # cat
-      # # relation_input = torch.cat((xt_repeat, topk_data), axis=1)
-      
       ### === For 1-dim feature vector ===========================
-      xt_repeat = feature.repeat(args.ways*k, 1)  #[50, 128]
+      if args.relation_dim == 1:
+        xt_repeat = feature.repeat(args.ways*k, 1)  #[50, 128]
+
+        if args.rel_input_oprations == 'sum_sub_cat':
+          sum_feature = xt_repeat+topk_data
+          sub_abs_feature = torch.abs(xt_repeat-topk_data)
+          relation_input = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,128*2) #[w*w*q, 256]
+        elif args.rel_input_oprations == 'cat':
+          relation_input = torch.cat((xt_repeat, topk_data), 2).view(-1,128*2)
+          
+      ### === For 3-dim feature vector ===========================
+      if args.relation_dim == 3:
+        xt_repeat = feature.repeat(args.ways*k, 1, 1, 1)  #[50, 64, 5, 5]
       
-      # cat
-      relation_input = torch.cat((xt_repeat, topk_data), 1).view(-1,128*2) #[w*w*q, 256]
+        if args.rel_input_oprations == 'sum_sub_cat':
+          sum_feature = xt_repeat+topk_data
+          sub_abs_feature = torch.abs(xt_repeat-topk_data)
+          relation_input = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,64*2,5,5)
+        elif args.rel_input_oprations == 'cat':
+          relation_input = torch.cat((xt_repeat, topk_data), 2).view(-1,64*2,5,5)
       
-      # sum, sub, cat
-      # sum_feature = xt_repeat+topk_data
-      # sub_abs_feature = torch.abs(xt_repeat-topk_data)
-      # relation_input = torch.cat((sum_feature, sub_abs_feature), 1).view(-1,128*2) #[w*w*q, 256]
       
       relation_output = mclassifer(relation_input)
 
