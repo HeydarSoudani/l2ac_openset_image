@@ -45,6 +45,7 @@ class CNNEncoder(nn.Module):
 										nn.Dropout(args.dropout))
 
 		self.fc1 = nn.Linear(in_features=64*5*5, out_features=args.hidden_dims)
+		self.args = args
 
 	def forward(self,x): #[bs, 1, 28, 28]
 		out = self.layer1(x)   #[bs, 64, 13, 13]
@@ -53,8 +54,9 @@ class CNNEncoder(nn.Module):
 		out = self.layer4(out) #[bs, 64, 5, 5]
 		
 		# for 1-dim feature vector
-		out = out.view(out.size(0),-1)
-		out = self.fc1(out)
+		if self.args.relation_dim == 1:
+			out = out.view(out.size(0),-1)
+			out = self.fc1(out)
 		
 		return out # 64
 

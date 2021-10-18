@@ -69,6 +69,12 @@ parser.add_argument('--p', default=0.5, type=float, help='Random Erasing probabi
 parser.add_argument('--sh', default=0.4, type=float, help='max erasing area')
 parser.add_argument('--r1', default=0.2, type=float, help='aspect of erasing area')
 
+# Network Setting
+parser.add_argument('--relation_dim', default=3, type=int, choices=[1,3])
+parser.add_argument('--use_transform', default=False, type=bool)
+parser.add_argument('--rel_input_oprations', default='cat', type=str, choices=['cat','sum_sub_cat'])
+
+
 args = parser.parse_args()
 
 ## == Device =====================
@@ -87,10 +93,14 @@ np.random.seed(args.seed)
 if not os.path.exists(args.save):
   os.makedirs(args.save)
 
-## == Model Definition ===========
+## == Models Definition ==========
 model = CNNEncoder(args)
-# mclassifer = RelationNetwork(64, 8)
-mclassifer = RelationNetworkFC(args)
+
+if args.relation_dim == 1:
+  mclassifer = RelationNetworkFC(args)
+elif args.relation_dim == 3:
+  mclassifer = RelationNetwork(64, 8)
+
 model.apply(weights_init)
 mclassifer.apply(weights_init)
 

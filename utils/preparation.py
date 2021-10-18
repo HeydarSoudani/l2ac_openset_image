@@ -42,8 +42,10 @@ def dataloader_preparation(train_data, args):
   ## = trainloader ============
   train_dataloaders = []
   for task_data in task_list:
-    temp_dataset = DatasetFM(task_data)
-    # temp_dataset = DatasetFM(task_data, transforms=transform_train)
+    if args.use_transform == False:
+      temp_dataset = DatasetFM(task_data)
+    else:
+      temp_dataset = DatasetFM(task_data, transforms=transform_train)
 
     train_sampler = TaskSampler(
       temp_dataset,
@@ -62,8 +64,12 @@ def dataloader_preparation(train_data, args):
     train_dataloaders.append(train_loader)
 
   ## = Data validation ================
-  val_dataset = DatasetFM(val_data)
-  # val_dataset = DatasetFM(val_data, transforms=transform_val)
+
+  if args.use_transform == False:
+    val_dataset = DatasetFM(val_data)
+  else:
+    val_dataset = DatasetFM(val_data, transforms=transform_val)
+  
   val_sampler = TaskSampler(
     val_dataset,
     n_way=args.ways,
@@ -80,7 +86,6 @@ def dataloader_preparation(train_data, args):
     )
 
   # val_dataloader = DataLoader(dataset=val_dataset, batch_size=8, shuffle=False)
-
   return train_dataloaders, val_dataloader
 
 
@@ -101,51 +106,47 @@ def relation_data_preparation(batch, model, args, device):
   support_features = model.forward(support_images) #[ways*shot, 64, 5, 5]
   query_features = model.forward(query_images)     #[ways*query_num, 64, 5, 5]
 
-  ### === For 3-dim feature vector ============
-  # support_features = support_features.view(args.ways, args.shot, 64, 5, 5)
-  # support_features = torch.mean(support_features, 1).squeeze(1)
-  # support_features_ext = support_features.unsqueeze(0).repeat(args.ways*args.query_num,1,1,1,1)
-  # support_labels = support_labels[:, 0]
-  # support_labels = support_labels.unsqueeze(0).repeat(args.ways*args.query_num,1)
-
-  # query_features_ext = query_features.unsqueeze(0).repeat(args.ways,1,1,1,1)
-  # query_features_ext = torch.transpose(query_features_ext,0,1)
-  # query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)
-  # query_labels = torch.transpose(query_labels,0,1)
-
-  # # sum, sub, cat
-  # sum_feature = support_features_ext+query_features_ext
-  # sub_abs_feature = torch.abs(support_features_ext-query_features_ext)
-  # relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,64*2,5,5)
-  # # cat
-  # # relation_pairs = torch.cat((support_features_ext,query_features_ext),2).view(-1,64*2,5,5)
-  
-  # relarion_labels = torch.zeros(args.ways*args.query_num, args.ways).to(device)
-  # relarion_labels = torch.where(
-  #   support_labels!=query_labels,
-  #   relarion_labels,
-  #   torch.tensor(1.).to(device)
-  # )
-
   ### === For 1-dim feature vector =============
-  support_features = support_features.view(args.ways, args.shot, 128)
-  support_features = torch.mean(support_features, 1).squeeze(1)  # [ways, 128]
-  support_features_ext = support_features.unsqueeze(0).repeat(args.ways*args.query_num,1,1) #[w*q, w, 128]
-  support_labels = support_labels[:, 0]                                           #[w]
-  support_labels = support_labels.unsqueeze(0).repeat(args.ways*args.query_num,1) #[w*q, w]
+  if args.relation_dim == 1:
+    support_features = support_features.view(args.ways, args.shot, 128)
+    support_features = torch.mean(support_features, 1).squeeze(1)  # [ways, 128]
+    support_features_ext = support_features.unsqueeze(0).repeat(args.ways*args.query_num,1,1) #[w*q, w, 128]
+    support_labels = support_labels[:, 0]                                           #[w]
+    support_labels = support_labels.unsqueeze(0).repeat(args.ways*args.query_num,1) #[w*q, w]
 
-  query_features_ext = query_features.unsqueeze(0).repeat(args.ways,1,1)  #[w, w*q, 128]
-  query_features_ext = torch.transpose(query_features_ext,0,1)                #[w*q, w, 128]
-  query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)                #[w, w*q]
-  query_labels = torch.transpose(query_labels,0,1)                            #[w*q, w]
+    query_features_ext = query_features.unsqueeze(0).repeat(args.ways,1,1)  #[w, w*q, 128]
+    query_features_ext = torch.transpose(query_features_ext,0,1)                #[w*q, w, 128]
+    query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)                #[w, w*q]
+    query_labels = torch.transpose(query_labels,0,1)                            #[w*q, w]
 
-  # cat
-  relation_pairs = torch.cat((support_features_ext, query_features_ext), 2).view(-1,128*2)
+    if args.rel_input_oprations == 'sum_sub_cat':
+      sum_feature = support_features_ext+query_features_ext
+      sub_abs_feature = torch.abs(support_features_ext-query_features_ext)
+      relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,128*2) #[w*w*q, 256]
+    elif args.rel_input_oprations == 'cat':
+      relation_pairs = torch.cat((support_features_ext, query_features_ext), 2).view(-1,128*2)
 
-  # abssub() cat sum() 
-  # sum_feature = support_features_ext+query_features_ext
-  # sub_abs_feature = torch.abs(support_features_ext-query_features_ext)
-  # relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,128*2) #[w*w*q, 256]
+
+  ### === For 3-dim feature vector ============
+  if args.relation_dim == 3:
+    support_features = support_features.view(args.ways, args.shot, 64, 5, 5)
+    support_features = torch.mean(support_features, 1).squeeze(1)
+    support_features_ext = support_features.unsqueeze(0).repeat(args.ways*args.query_num,1,1,1,1)
+    support_labels = support_labels[:, 0]
+    support_labels = support_labels.unsqueeze(0).repeat(args.ways*args.query_num,1)
+
+    query_features_ext = query_features.unsqueeze(0).repeat(args.ways,1,1,1,1)
+    query_features_ext = torch.transpose(query_features_ext,0,1)
+    query_labels = query_labels.unsqueeze(0).repeat(args.ways,1)
+    query_labels = torch.transpose(query_labels,0,1)
+
+    if args.rel_input_oprations == 'sum_sub_cat':
+      sum_feature = support_features_ext+query_features_ext
+      sub_abs_feature = torch.abs(support_features_ext-query_features_ext)
+      relation_pairs = torch.cat((sum_feature, sub_abs_feature), 2).view(-1,64*2,5,5)
+    elif args.rel_input_oprations == 'cat':
+      relation_pairs = torch.cat((support_features_ext,query_features_ext),2).view(-1,64*2,5,5)
+
 
   relarion_labels = torch.zeros(
     args.ways*args.query_num,
