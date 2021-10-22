@@ -42,8 +42,8 @@ if __name__ == '__main__':
   ## ========================================
   # == Get MNIST dataset ====================
   if args.dataset == 'mnist':
-    train_data = read_csv(os.path.join(args.data_path, "mnist_train.csv"), sep=',', header=None).values
-    test_data = read_csv(os.path.join(args.data_path, "mnist_test.csv"), sep=',', header=None).values
+    train_data = read_csv(os.path.join(args.data_path, "mnist_train.csv"), sep=',').values
+    test_data = read_csv(os.path.join(args.data_path, "mnist_test.csv"), sep=',').values
 
     X_train, y_train = train_data[:, 1:], train_data[:, 0]
     X_test, y_test = test_data[:, 1:], test_data[:, 0]
